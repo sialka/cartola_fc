@@ -21,6 +21,7 @@
   },
   "peacock.remoteColor": "#007d9c",
   "conventionalCommits.scopes": [
-    "Aula 1"
+    "Aula 1",
+    "Aula 2"
   ]
 }
