@@ -72,6 +72,16 @@ $ sudo snap install sqlc
 $ sqlc generate
 ```
 
+**Instalando Migrate**
+
+```bash
+$ curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash
+$ apt-get update
+$ apt-get install -y migrate
+
+$ migrate -source file:///home/sidnei/developer/cartola-fc/ms-consolidacao/sql/migrations -database 'mysql://root:root@tcp(mysql:3306)/cartola' up
+```
+
 **Gerando as Entity**
 
 Path: internal/domain/entity
