@@ -1,5 +1,9 @@
 # 1. Mundo Full Cycle e Estudo de Caso "Cartola FC"
 
+**Teoria**
+
+
+
 
 ![](img/1.png)
 
@@ -43,7 +47,7 @@ https://sqlc.dev/
 
 ---
 
-#### Hands-On
+## Hands-On
 
 ```bash
 go mod init github.com/sialka/cartola_fc

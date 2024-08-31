@@ -9,19 +9,16 @@ import (
 	"github.com/sialka/cartola_fc/pkg/uow"
 )
 
-type ProcessNewPlayer struct{}
+type ProcessNewMatch struct{}
 
-func (p ProcessNewPlayer) Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error {
-	var input usecase.AddPlayerInput
-
-	// Convertendo dados do kafka -> json
+func (p ProcessNewMatch) Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error {
+	var input usecase.MatchInput
 	err := json.Unmarshal(msg.Value, &input)
 	if err != nil {
 		return err
 	}
-
-	addNewPlayerUsecase := usecase.NewAddPlayerUseCase(uow)
-	err = addNewPlayerUsecase.Execute(ctx, input)
+	addNewMatchUsecase := usecase.NewMatchUseCase(uow)
+	err = addNewMatchUsecase.Execute(ctx, input)
 	if err != nil {
 		return err
 	}

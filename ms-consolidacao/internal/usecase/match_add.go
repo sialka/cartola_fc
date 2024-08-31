@@ -20,12 +20,11 @@ type MatchUseCase struct {
 	Uow uow.UowInterface
 }
 
-/*
 func NewMatchUseCase(uow uow.UowInterface) *MatchUseCase {
 	return &MatchUseCase{
 		Uow: uow,
 	}
-}*/
+}
 
 func (u *MatchUseCase) Execute(ctx context.Context, input MatchInput) error {
 	return u.Uow.Do(ctx, func(_ *uow.Uow) error {

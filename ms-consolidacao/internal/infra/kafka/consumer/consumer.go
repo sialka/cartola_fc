@@ -1,7 +1,12 @@
 package consumer
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/infra/kafka/factory"
+	"github.com/sialka/cartola_fc/pkg/uow"
 )
 
 func Consume(topics []string, servers string, msgChan chan *kafka.Message) {
@@ -25,7 +30,7 @@ func Consume(topics []string, servers string, msgChan chan *kafka.Message) {
 	}
 }
 
-/*
+// Processo que le as msg do kafka
 func ProcessEvents(ctx context.Context, msgChan chan *kafka.Message, uwo uow.UowInterface) {
 	for msg := range msgChan {
 		fmt.Println("Received message", string(msg.Value), "on topic", *msg.TopicPartition.Topic)
@@ -35,4 +40,4 @@ func ProcessEvents(ctx context.Context, msgChan chan *kafka.Message, uwo uow.Uow
 			fmt.Println(err)
 		}
 	}
-}*/
+}

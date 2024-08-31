@@ -45,9 +45,73 @@
 **Banco de dados**
 
 1. Criar Tabelas
-2. Inserir dados
 
-> File: 
+```sql
+CREATE TABLE matches (id VARCHAR(36) NOT NULL PRIMARY KEY, match_date DATETIME, team_a_id VARCHAR(36), team_a_name VARCHAR(255), team_b_id VARCHAR(36), team_b_name VARCHAR(255), result VARCHAR(255));
+
+CREATE TABLE players (id VARCHAR(36) NOT NULL PRIMARY KEY, name VARCHAR(255) NOT NULL, price DECIMAL(10,2) NOT NULL);
+
+CREATE TABLE teams (id VARCHAR(36) NOT NULL PRIMARY KEY, name VARCHAR(255) NOT NULL);
+
+CREATE TABLE team_players (team_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL);
+
+CREATE TABLE my_team (id VARCHAR(36) NOT NULL PRIMARY KEY, name VARCHAR(255) NOT NULL, score DECIMAL(10,2) NOT NULL);
+
+CREATE TABLE my_team_players (my_team_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL);
+
+CREATE TABLE actions (id VARCHAR(36) NOT NULL PRIMARY KEY, match_id VARCHAR(36) NOT NULL, team_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL, action VARCHAR(255) NOT NULL, minute INTEGER NOT NULL, score DECIMAL(10,2) NOT NULL);
+```
+
+1. Inserir dados
+
+```sql
+INSERT INTO players (id, name, price) VALUES ('1', 'Cristiano Ronaldo', 10.00);
+INSERT INTO players (id, name, price) VALUES ('2', 'De Bruyne', 10.00);
+INSERT INTO players (id, name, price) VALUES ('3', 'Harry Kane', 10.00);
+INSERT INTO players (id, name, price) VALUES ('4', 'Lewandowski', 10.00);
+INSERT INTO players (id, name, price) VALUES ('5', 'Maguirre', 10.00);
+INSERT INTO players (id, name, price) VALUES ('6', 'Messi', 10.00);
+INSERT INTO players (id, name, price) VALUES ('7', 'Neymar', 10.00);
+INSERT INTO players (id, name, price) VALUES ('8', 'Richarlison', 10.00);
+INSERT INTO players (id, name, price) VALUES ('9', 'Vinicius Junior', 10.00);
+
+INSERT INTO teams (id, name) VALUES ('1', 'Argentina');
+INSERT INTO teams (id, name) VALUES ('2', 'Alemanha');
+INSERT INTO teams (id, name) VALUES ('3', 'Brasil');
+INSERT INTO teams (id, name) VALUES ('4', 'Bélgica');
+INSERT INTO teams (id, name) VALUES ('5', 'Portugal');
+INSERT INTO teams (id, name) VALUES ('6', 'Polônia');
+INSERT INTO teams (id, name) VALUES ('7', 'Inglaterra');
+
+-- /** fazer implementação com verificação da relação de teams com players **/
+INSERT INTO team_players (team_id, player_id) VALUES ('1','1');
+INSERT INTO team_players (team_id, player_id) VALUES ('2','2');
+INSERT INTO team_players (team_id, player_id) VALUES ('3','3');
+INSERT INTO team_players (team_id, player_id) VALUES ('3','4');
+INSERT INTO team_players (team_id, player_id) VALUES ('4','5');
+INSERT INTO team_players (team_id, player_id) VALUES ('5','6');
+INSERT INTO team_players (team_id, player_id) VALUES ('6','7');
+INSERT INTO team_players (team_id, player_id) VALUES ('7','8');
+INSERT INTO team_players (team_id, player_id) VALUES ('7','9');
+
+INSERT INTO my_team (id, name, score) VALUES ('1', 'Meu Time FC', 100);
+
+INSERT INTO my_team_players (my_team_id, player_id) VALUES ('1', '1');
+INSERT INTO my_team_players (my_team_id, player_id) VALUES ('1', '2');
+INSERT INTO my_team_players (my_team_id, player_id) VALUES ('1', '3');
+INSERT INTO my_team_players (my_team_id, player_id) VALUES ('1', '4');
+
+INSERT INTO matches (id, match_date, team_a_id, team_a_name, team_b_id, team_b_name, result) VALUES ('1', '2024-08-02 00:00:00', '1', 'Argentina', '2', 'Alemanha', '1-0');
+INSERT INTO matches (id, match_date, team_a_id, team_a_name, team_b_id, team_b_name, result) VALUES ('2', '2024-08-02 00:00:00', '3', 'Brasil', '4', 'Bélgica', '1-0');
+
+-- -- insert match actions
+INSERT INTO actions (id, match_id, team_id, player_id, action, score, minute) VALUES ('1', '1', '1', '1', 'goal', 1, 20);
+INSERT INTO actions (id, match_id, team_id, player_id, action, score, minute) VALUES ('2', '1', '1', '1', 'yellow card', 1, 5);
+INSERT INTO actions (id, match_id, team_id, player_id, action, score, minute) VALUES ('3', '2', '3', '3', 'assist', 1, 10);
+INSERT INTO actions (id, match_id, team_id, player_id, action, score, minute) VALUES ('4', '2', '3', '4', 'goal', 1, 10);
+```
+
+> File: cmd/cartola/main.go
 
 ```go
 package main
@@ -60,9 +124,7 @@ import (
 	"github.com/sialka/cartola_fc/internal/infra/db"
 	"github.com/sialka/cartola_fc/internal/infra/repository"
 
-	httphandler "github.com/sialka/cartola_fc/internal/infra/http"
-
-	//"github.com/sialka/cartola_fc/internal/infra/kafka/consumer"
+	httphandler "github.com/sialka/cartola_fc/internal/infra/http"	
 
 	"github.com/go-chi/chi"
 	"github.com/sialka/cartola_fc/pkg/uow"
@@ -372,6 +434,12 @@ func NewMatchPresenter(match *entity.Match) Match {
 }
 ```
 
+
+
+**FASE 2 - USANDO KAFKA**
+
+
+
 **Update Dockerfile e docker-composer.yaml**
 
 > File: ms-consolidacao/Dockerfile
@@ -487,5 +555,405 @@ services:
 $ docker-compose up -build
 $ docker-compose ps
 $ docker-compose exec goapp bash
+```
+![](img/docker.png)
 
+####  Internal - infra - kafka: { consumer, event, factory }
+
+> File: internal/infra/kafka/factory/factory.go
+
+```go
+package factory
+
+import "github.com/sialka/cartola_fc/internal/infra/kafka/event"
+
+func CreateProcessMessageStrategy(topic string) event.ProcessEventStrategy {
+	switch topic {
+	case "chooseTeam":
+		// JSON do Topico: {"my_team_id":"1", "players":["1","2","3","4","5"]}
+		return event.ProcessChooseTeam{}
+	case "newPlayer":
+		// JSON do Topico: {"id": "10","name": "Wesley","initial_price": 10.5}
+		return event.ProcessNewPlayer{}
+	case "newMatch":
+		// JSON do Topico: {"id":"3","match_date":"2021-05-01T00:00:00Z","team_a_id":"1","team_b_id":"2"}
+		return event.ProcessNewMatch{}
+	case "newAction":
+		// JSON do Topico: {"match_id":"3","team_id":"1","player_id":"1","action":"goal","minutes":10}
+		return event.ProcessNewAction{}
+	case "matchUpdateResult":
+		// JSON do Topico: {"match_id":"1","result":"2-0"}
+		return event.ProcessMatchUpdateResult{}
+	}
+	return nil
+}
+```
+
+> File: internal/infra/kafka/consumer/consumer.go
+ 
+```go
+package consumer
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/infra/kafka/factory"
+	"github.com/sialka/cartola_fc/pkg/uow"
+)
+
+func Consume(topics []string, servers string, msgChan chan *kafka.Message) {
+	kafkaConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": servers,
+		"group.id":          "gostats",
+		"auto.offset.reset": "earliest", // pegar msg mais novas
+	})
+	if err != nil {
+		panic(err)
+	}
+	// Se inscreve no topico para ler as msg
+	kafkaConsumer.SubscribeTopics(topics, nil)
+
+	// Loop para ler as mensagens
+	for {
+		msg, err := kafkaConsumer.ReadMessage(-1)
+		if err == nil {
+			msgChan <- msg // Pega a msg e add no canal msgChan
+		}
+	}
+}
+
+// Processo que le as msg do kafka
+func ProcessEvents(ctx context.Context, msgChan chan *kafka.Message, uwo uow.UowInterface) {
+	for msg := range msgChan {
+		fmt.Println("Received message", string(msg.Value), "on topic", *msg.TopicPartition.Topic)
+		strategy := factory.CreateProcessMessageStrategy(*msg.TopicPartition.Topic)
+		err := strategy.Process(ctx, msg, uwo)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+}
+```
+
+**Events**
+
+> File:  internal/infra/kafka/event/strategy.go
+
+```go 
+package event
+
+import (
+	"context"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/pkg/uow"
+)
+
+type ProcessEventStrategy interface {
+	Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error
+}
+```
+
+> File: internal/infra/kafka/event/new_player.go
+
+```go
+package event
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/usecase"
+	"github.com/sialka/cartola_fc/pkg/uow"
+)
+
+type ProcessNewPlayer struct{}
+
+func (p ProcessNewPlayer) Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error {
+	var input usecase.AddPlayerInput
+
+	// Convertendo dados do kafka -> json
+	err := json.Unmarshal(msg.Value, &input)
+	if err != nil {
+		return err
+	}
+
+	addNewPlayerUsecase := usecase.NewAddPlayerUseCase(uow)
+	err = addNewPlayerUsecase.Execute(ctx, input)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+```
+
+> File: internal/infra/kafka/event/new_match.go
+
+```go
+package event
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/usecase"
+	"github.com/sialka/cartola_fc/pkg/uow"
+)
+
+type ProcessNewMatch struct{}
+
+func (p ProcessNewMatch) Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error {
+	var input usecase.MatchInput
+	err := json.Unmarshal(msg.Value, &input)
+	if err != nil {
+		return err
+	}
+	addNewMatchUsecase := usecase.NewMatchUseCase(uow)
+	err = addNewMatchUsecase.Execute(ctx, input)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+```
+
+> File: internal/infra/kafka/event/new_match.go
+
+```go
+package event
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/usecase"
+	"github.com/sialka/cartola_fc/pkg/uow"
+)
+
+type ProcessNewMatch struct{}
+
+func (p ProcessNewMatch) Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error {
+	var input usecase.MatchInput
+	err := json.Unmarshal(msg.Value, &input)
+	if err != nil {
+		return err
+	}
+	addNewMatchUsecase := usecase.NewMatchUseCase(uow)
+	err = addNewMatchUsecase.Execute(ctx, input)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+```
+
+> File: internal/infra/kafka/event/new_action.go
+
+```go
+package event
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/domain/entity"
+	"github.com/sialka/cartola_fc/internal/usecase"
+	"github.com/sialka/cartola_fc/pkg/uow"
+)
+
+type ProcessNewAction struct{}
+
+func (p ProcessNewAction) Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error {
+	var input usecase.ActionAddInput
+	err := json.Unmarshal(msg.Value, &input)
+	if err != nil {
+		return err
+	}
+	actionTable := entity.ActionTable{}
+	actionTable.Init()
+	addNewActionUsecase := usecase.NewActionAddUseCase(uow, &actionTable)
+	err = addNewActionUsecase.Execute(ctx, input)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+```
+
+> File: internal/infra/kafka/event/match_update_result.go
+
+```go
+package event
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/usecase"
+	"github.com/sialka/cartola_fc/pkg/uow"
+)
+
+type ProcessMatchUpdateResult struct{}
+
+func (p ProcessMatchUpdateResult) Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error {
+	var input usecase.MatchUpdateResultInput
+	err := json.Unmarshal(msg.Value, &input)
+	if err != nil {
+		return err
+	}
+	fmt.Println("input: ", input)
+	updateMatchResultUsecase := usecase.NewMatchUpdateResultUseCase(uow)
+	err = updateMatchResultUsecase.Execute(ctx, input)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+```
+
+> File: internal/infra/kafka/event/choose_team.go
+
+```go
+package event
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/usecase"
+	"github.com/sialka/cartola_fc/pkg/uow"
+)
+
+type ProcessChooseTeam struct{}
+
+func (p ProcessChooseTeam) Process(ctx context.Context, msg *kafka.Message, uow uow.UowInterface) error {
+	var input usecase.MyTeamChoosePlayersInput
+	err := json.Unmarshal(msg.Value, &input)
+	if err != nil {
+		return err
+	}
+	addNewMyTeamUsecase := usecase.NewMyTeamChoosePlayersUseCase(uow)
+	err = addNewMyTeamUsecase.Execute(ctx, input)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+```
+
+> File: cmd/cartola/main.go
+
+```go
+package main
+
+import (
+	"context"
+	"database/sql"
+	"net/http"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/sialka/cartola_fc/internal/infra/db"
+	"github.com/sialka/cartola_fc/internal/infra/repository"
+
+	httphandler "github.com/sialka/cartola_fc/internal/infra/http"
+
+	"github.com/sialka/cartola_fc/internal/infra/kafka/consumer"
+
+	"github.com/go-chi/chi"
+	"github.com/sialka/cartola_fc/pkg/uow"
+
+	_ "github.com/go-sql-driver/mysql"
+)
+
+func main() {
+	ctx := context.Background()
+	//dtb, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/cartola?parseTime=true")
+	dtb, err := sql.Open("mysql", "root:root@tcp(mysql:3306)/cartola?parseTime=true")
+	if err != nil {
+		panic(err)
+	}
+	defer dtb.Close()
+	uow, err := uow.NewUow(ctx, dtb)
+	if err != nil {
+		panic(err)
+	}
+	registerRepositories(uow)
+
+	r := chi.NewRouter()
+
+	r.Get("/players", httphandler.ListPlayersHandler(ctx, *db.New(dtb)))
+	r.Get("/my-teams/{teamID}/players", httphandler.ListMyTeamPlayersHandler(ctx, *db.New(dtb)))
+	r.Get("/my-teams/{teamID}/balance", httphandler.GetMyTeamBalanceHandler(ctx, *db.New(dtb)))
+	r.Get("/matches", httphandler.ListMatchesHandler(ctx, repository.NewMatchRepository(dtb)))
+	r.Get("/matches/{matchID}", httphandler.ListMatchByIDHandler(ctx, repository.NewMatchRepository(dtb)))
+
+	go http.ListenAndServe(":8080", r)
+
+	var topics = []string{"newMatch", "chooseTeam", "newPlayer", "matchUpdateResult", "newAction"}
+	msgChan := make(chan *kafka.Message)
+	go consumer.Consume(topics, "host.docker.internal:9094", msgChan)
+	consumer.ProcessEvents(ctx, msgChan, uow)
+
+	/*
+
+		r.Use(cors.Handler(cors.Options{
+			// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
+			AllowedOrigins: []string{"https://*", "http://*"},
+			// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+			ExposedHeaders:   []string{"Link"},
+			AllowCredentials: false,
+			MaxAge:           300, // Maximum value not ignored by any of major browsers
+		}))
+		r.Get("/players", httphandler.ListPlayersHandler(ctx, *db.New(dtb)))
+		r.Get("/my-teams/{teamID}/players", httphandler.ListMyTeamPlayersHandler(ctx, *db.New(dtb)))
+		r.Get("/my-teams/{teamID}/balance", httphandler.GetMyTeamBalanceHandler(ctx, *db.New(dtb)))
+		r.Get("/matches", httphandler.ListMatchesHandler(ctx, repository.NewMatchRepository(dtb)))
+		r.Get("/matches/{matchID}", httphandler.ListMatchByIDHandler(ctx, repository.NewMatchRepository(dtb)))
+
+		go http.ListenAndServe(":8080", r)
+
+		var topics = []string{"newMatch", "chooseTeam", "newPlayer", "matchUpdateResult", "newAction"}
+		msgChan := make(chan *kafka.Message)
+		go consumer.Consume(topics, "host.docker.internal:9094", msgChan)
+		consumer.ProcessEvents(ctx, msgChan, uow)
+	*/
+}
+
+// Registrando todos os infra/repository
+func registerRepositories(uow *uow.Uow) {
+	uow.Register("PlayerRepository", func(tx *sql.Tx) interface{} {
+		repo := repository.NewPlayerRepository(uow.Db)
+		repo.Queries = db.New(tx)
+		return repo
+	})
+
+	uow.Register("MatchRepository", func(tx *sql.Tx) interface{} {
+		repo := repository.NewMatchRepository(uow.Db)
+		repo.Queries = db.New(tx)
+		return repo
+	})
+
+	uow.Register("TeamRepository", func(tx *sql.Tx) interface{} {
+		repo := repository.NewTeamRepository(uow.Db)
+		repo.Queries = db.New(tx)
+		return repo
+	})
+
+	uow.Register("MyTeamRepository", func(tx *sql.Tx) interface{} {
+		repo := repository.NewMyTeamRepository(uow.Db)
+		repo.Queries = db.New(tx)
+		return repo
+	})
+}
 ```

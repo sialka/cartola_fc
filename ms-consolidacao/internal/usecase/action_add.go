@@ -25,13 +25,12 @@ type ActionAddUseCase struct {
 	ActionTable entity.ActionTableInterface
 }
 
-/*
 func NewActionAddUseCase(uow uow.UowInterface, actionTable entity.ActionTableInterface) *ActionAddUseCase {
 	return &ActionAddUseCase{
 		Uow:         uow,
 		ActionTable: actionTable,
 	}
-}*/
+}
 
 // execute
 func (a *ActionAddUseCase) Execute(ctx context.Context, input ActionAddInput) error {
