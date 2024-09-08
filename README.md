@@ -1,8 +1,8 @@
 # Imersão - Cartola Full Cycle
 
-**Tópicos:**
+**Aulas:**
 
-1. Mundo Full Cycle e Estudo de Caso "Cartola FC"
+1. Mundo Full Cycle e Estudo de Caso **Cartola FC**
 
 2. Integrando Microsserviços ao Apache Kafka
 

@@ -2,6 +2,8 @@
 
 **Next.js Serve Side Rendering (SSR)**
 
+Criando o projeto base com REACT.
+
 ```bash
 $ npx create-next-app --typescript
 ✔ What is your project named? … next
@@ -38,11 +40,13 @@ found 0 vulnerabilities
 Success! Created next at /home/sidnei/developer/cartola-fc/3-next/next
 ```
 
-Adicionando o Material UI
+**Adicionando o Material UI**
 
+```bash
 $ yarn add @mui/material @emotion/react @emotion/styled @emotion/cache @emotion/server @next/font @mui/icons-material
+```
 
-1. Criar a pasta src dentro de next e mover pages para dentro src
+- Criar a pasta src dentro de next e mover pages para dentro src
 
 > File: src/pages/_app.tsx
 
