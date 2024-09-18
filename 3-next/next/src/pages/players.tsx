@@ -9,50 +9,51 @@ import { Label } from "../components/Label";
 import { Player, PlayersMap } from "../util/models";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonIcon from "@mui/icons-material/Person2";
+import { httpAdmin } from "../util/http";
 
 const players = [
   {
-    id: 1,
+    id: "64fb9c2f-a45b-4f96-9d8b-b127878ca6f3",
     name: "Messi",
     price: 35,
   },
   {
-    id: 2,
+    id: "4876d14f-d998-4abf-96ef-89fd53185464",
     name: "Cristiano Ronaldo",
     price: 35,
   },
   {
-    id: 3,
+    id: "0f463bea-1dbd-4765-b080-9f5f170b6ded",
     name: "Neymar",
     price: 25,
   },
   {
-    id: 4,
+    id: "0b8f08d8-d871-4a42-b395-17d698f477db",
     name: "De Bruyne",
     price: 25,
   },
   {
-    id: 5,
+    id: "c707bfa9-074e-4636-8772-633e4b56248d",
     name: "Vinicius Junior",
     price: 25,
   },
   {
-    id: 6,
+    id: "67fbf409-d94f-4858-8423-8043576cda05",
     name: "Lewandowski",
     price: 15,
   },
   {
-    id: 7,
+    id: "c7830b65-cf79-49b7-a878-82250fec1d94",
     name: "Maguirre",
     price: 15,
   },
   {
-    id: 8,
+    id: "5ce233a8-5cd8-4a85-8156-9ac255cf909e",
     name: "Richarlison",
     price: 15,
   },
   {
-    id: 9,
+    id: "0c9ba4fb-4609-464d-9845-421ca1e1e3bd",
     name: "Harry Kane",
     price: 15,
   },
@@ -118,6 +119,16 @@ const ListPlayerPage: NextPage = () => {
       return newPlayers;
     });
   }, []);
+
+
+  const saveMyPlayers = useCallback(async () => {
+    await httpAdmin.put(
+      "/my-teams/22087246-01bc-46ad-a9d9-a99a6d734167/players",
+      {
+        players_uuid: playersSelected.map((player) => player.id),
+      }
+    );
+  }, [playersSelected]);
 
   return (
     <Page>
@@ -252,7 +263,7 @@ const ListPlayerPage: NextPage = () => {
             variant="contained"
             size="large"
             disabled={countPlayersUsed < totalPlayers || budgetRemaining < 0}
-            onClick={() => console.log("saveMyPlayers()")}
+            onClick={() => saveMyPlayers()}
           >
             Salvar
           </Button>

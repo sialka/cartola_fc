@@ -16,7 +16,6 @@ export const PlayersMap: { [key: string]: string } = {
   "Vinicius Junior": "/img/players/Vinicius Junior.png",
 };
 
-/*
 export type Action = {
   player_name: string;
   minutes: number;
@@ -43,4 +42,4 @@ export const TeamsImagesMap: { [key: string]: string } = {
   Inglaterra: "/img/flags/Inglaterra.png",
   Polônia: "/img/flags/Polonia.png",
   Portugal: "/img/flags/Portugal.png",
-};*/
+};
